@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { signIn, signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
 
 interface ShortUrl {
@@ -14,7 +13,6 @@ interface ShortUrl {
 }
 
 export default function Home() {
-  const { data: session } = useSession()
   const [urls, setUrls] = useState<ShortUrl[]>([])
   const [targetUrl, setTargetUrl] = useState('')
   const [shortUrl, setShortUrl] = useState('')
@@ -28,24 +26,18 @@ export default function Home() {
       const response = await fetch('/api/shorturl')
       if (response.ok) {
         const data = await response.json()
-        if (session?.user?.id) {
-          setUrls(data.filter((url: ShortUrl) => url.userId === session.user.id))
-        } else {
-          setUrls(data)
-        }
+        setUrls(data)
       }
     } catch (err) {
       console.error('Error fetching URLs:', err)
     } finally {
       setLoading(false)
     }
-  }, [session?.user?.id])
+  }, [])
 
   useEffect(() => {
-    if (session) {
-      fetchUrls()
-    }
-  }, [session, fetchUrls])
+    fetchUrls()
+  }, [fetchUrls])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,7 +46,7 @@ export default function Home() {
     const res = await fetch('/api/shorturl', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetUrl, userId: session?.user?.id }),
+      body: JSON.stringify({ targetUrl }),
     })
     if (res.ok) {
       const data = await res.json()
@@ -103,33 +95,9 @@ export default function Home() {
       {/* Navbar */}
       <nav className="w-full flex items-center justify-between px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 shadow text-white mb-4">
         <div className="font-bold text-lg tracking-wide">URL Shortener</div>
-        <div className="flex items-center gap-4">
-          {session?.user ? (
-            <>
-              {session?.user?.image && (
-                <Image
-                  src={session.user.image}
-                  alt={session.user.name || 'User'}
-                  width={32}
-                  height={32}
-                  className="rounded-full"
-                />
-              )}
-              <span className="font-semibold">{session.user.name}</span>
-              <button onClick={() => signOut()} className="bg-white/20 hover:bg-white/40 px-4 py-1 rounded transition">Logout</button>
-            </>
-          ) : (
-            <button onClick={() => signIn('google')} className="bg-white/20 hover:bg-white/40 px-4 py-1 rounded transition font-semibold">Login with Google</button>
-          )}
-        </div>
       </nav>
       <main className="min-h-screen flex items-center justify-center pt-0">
         <div className="w-full max-w-xl bg-white/80 dark:bg-gray-900/80 shadow-xl rounded-xl p-8 border border-gray-200 dark:border-gray-800 mt-8">
-          {session?.user && (
-            <div className="mb-4 text-right text-sm text-gray-600 dark:text-gray-300">
-              Showing URLs for <b>{session.user.email}</b>
-            </div>
-          )}
           <form onSubmit={handleSubmit} className="mb-8 space-y-4">
             <div>
               <label className="block mb-2 font-semibold">Paste your long URL:</label>
@@ -140,19 +108,14 @@ export default function Home() {
                 className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="https://example.com/very/long/url"
                 required
-                disabled={!session?.user}
               />
             </div>
             <button
               type="submit"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition w-full disabled:opacity-60"
-              disabled={!session?.user}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition w-full"
             >
               Shorten URL
             </button>
-            {!session?.user && (
-              <div className="text-center text-red-500 text-sm">Login required to create short URLs</div>
-            )}
           </form>
           {shortUrl && (
             <div className="mb-8 flex items-center gap-2 justify-center">

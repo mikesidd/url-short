@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
 interface Redirect {
@@ -13,7 +12,6 @@ interface Redirect {
 }
 
 export default function AppPage() {
-  const { data: session } = useSession()
   const router = useRouter()
   const [urls, setUrls] = useState<Redirect[]>([])
   const [newUrl, setNewUrl] = useState('')
@@ -32,10 +30,8 @@ export default function AppPage() {
   }, [])
 
   useEffect(() => {
-    if (session) {
-      fetchUrls()
-    }
-  }, [session, fetchUrls])
+    fetchUrls()
+  }, [fetchUrls])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -70,27 +66,10 @@ export default function AppPage() {
     }
   }
 
-  if (!session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please sign in to continue</h1>
-          <button
-            onClick={() => router.push('/api/auth/signin')}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Sign In
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">URL Redirection Tool</h1>
-        
         <form onSubmit={handleSubmit} className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -114,7 +93,6 @@ export default function AppPage() {
           </button>
           {error && <p className="text-red-500 mt-2">{error}</p>}
         </form>
-
         {loading ? (
           <div className="text-center">Loading...</div>
         ) : (
@@ -125,7 +103,7 @@ export default function AppPage() {
                 className="border p-4 rounded flex justify-between items-center"
               >
                 <div>
-                  <div className="font-medium">{url.sourceUrl}</div>
+                  <div className="font-medium">{url.shortId}</div>
                   <div className="text-sm text-gray-500">{url.targetUrl}</div>
                 </div>
                 <button
