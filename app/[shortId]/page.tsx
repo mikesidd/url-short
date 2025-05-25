@@ -16,7 +16,7 @@ interface ErrorResponse {
 }
 
 export default async function Page({ params }: PageProps) {
-  const { shortId } = params;
+  const { shortId } = await params;
 
   try {
     const redirectData = await prisma.redirect.findUnique({
