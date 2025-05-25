@@ -9,6 +9,9 @@ const nextConfig = {
   reactStrictMode: false,
   experimental: {
     suppressHydrationWarning: true,
+  },
+  images: {
+    domains: ['lh3.googleusercontent.com'],
   }
 }
 
