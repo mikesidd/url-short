@@ -11,7 +11,7 @@ interface PageProps {
 }
 
 export default async function ShortRedirectPage({ params }: PageProps) {
-  const shortId = params.shortId;
+  const { shortId } = await Promise.resolve(params);
   const url = await prisma.shortUrl.findUnique({ where: { shortId } });
   if (url) {
     // IP निकालो
