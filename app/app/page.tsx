@@ -1,127 +1,128 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import Image from "next/image";
 
-interface Redirect {
+interface ShortUrl {
   id: string
-  sourceUrl: string
+  shortId: string
   targetUrl: string
+  createdAt: string
 }
 
-export default function Home() {
-  const [sourceUrl, setSourceUrl] = useState('')
-  const [targetUrl, setTargetUrl] = useState('')
-  const [error, setError] = useState<string | null>(null)
+export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [urls, setUrls] = useState<ShortUrl[]>([]);
+  const [newUrl, setNewUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/');
+    }
+  }, [status, router]);
+
+  const fetchUrls = async () => {
+    try {
+      const response = await fetch('/api/redirects');
+      if (!response.ok) throw new Error('Failed to fetch URLs');
+      const data = await response.json();
+      setUrls(data);
+    } catch (err) {
+      console.error('Error fetching URLs:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (session) {
+      fetchUrls();
+    }
+  }, [session]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    if (!newUrl) return;
+
+    setIsLoading(true);
     try {
       const response = await fetch('/api/redirects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceUrl, targetUrl }),
-      })
-      if (response.ok) {
-        setSourceUrl('')
-        setTargetUrl('')
-      } else {
-        setError('Failed to create redirect')
-      }
+        body: JSON.stringify({ url: newUrl }),
+      });
+
+      if (!response.ok) throw new Error('Failed to create short URL');
+      
+      await fetchUrls();
+      setNewUrl('');
     } catch (err) {
-      setError('An error occurred')
+      console.error('Error creating short URL:', err);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/redirects/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete URL');
+      
+      await fetchUrls();
+    } catch (err) {
+      console.error('Error deleting URL:', err);
+    }
+  };
+
+  if (status === 'loading') {
+    return <div className="text-center mt-20">Loading...</div>;
   }
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <form onSubmit={handleSubmit} className="w-full max-w-md">
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Source URL</label>
-            <input
-              type="url"
-              value={sourceUrl}
-              onChange={(e) => setSourceUrl(e.target.value)}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Target URL</label>
-            <input
-              type="url"
-              value={targetUrl}
-              onChange={(e) => setTargetUrl(e.target.value)}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
-          {error && <div className="text-red-500 mb-4">{error}</div>}
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">URL Dashboard</h1>
+      
+      <form onSubmit={handleSubmit} className="mb-8">
+        <div className="flex gap-4">
+          <input
+            type="url"
+            value={newUrl}
+            onChange={(e) => setNewUrl(e.target.value)}
+            placeholder="Enter URL to shorten"
+            className="flex-1 p-2 border rounded"
+            required
+          />
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+            disabled={isLoading}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
           >
-            Create Redirect
+            {isLoading ? 'Creating...' : 'Shorten'}
           </button>
-        </form>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        </div>
+      </form>
+
+      <div className="space-y-4">
+        {urls.map((url) => (
+          <div key={url.id} className="border p-4 rounded flex justify-between items-center">
+            <div>
+              <p className="font-medium">{url.shortId}</p>
+              <p className="text-sm text-gray-600">{url.targetUrl}</p>
+            </div>
+            <button
+              onClick={() => handleDelete(url.id)}
+              className="text-red-500 hover:text-red-700"
+            >
+              Delete
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
