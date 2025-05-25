@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
 
@@ -14,7 +14,7 @@ interface ShortUrl {
 }
 
 export default function Home() {
-  const { data: session, status } = useSession()
+  const { data: session } = useSession()
   const [urls, setUrls] = useState<ShortUrl[]>([])
   const [targetUrl, setTargetUrl] = useState('')
   const [shortUrl, setShortUrl] = useState('')
@@ -23,12 +23,11 @@ export default function Home() {
   const [editTarget, setEditTarget] = useState('')
   const [loading, setLoading] = useState(true)
 
-  const fetchUrls = async () => {
+  const fetchUrls = useCallback(async () => {
     try {
       const response = await fetch('/api/shorturl')
       if (response.ok) {
         const data = await response.json()
-        // अगर लॉगिन है तो सिर्फ अपने URLs दिखाओ, वरना सब
         if (session?.user?.id) {
           setUrls(data.filter((url: ShortUrl) => url.userId === session.user.id))
         } else {
@@ -40,7 +39,7 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [session?.user?.id])
 
   useEffect(() => {
     if (session) {

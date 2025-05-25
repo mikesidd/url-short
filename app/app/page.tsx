@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import Image from "next/image";
 
 interface Redirect {
   id: string
@@ -95,20 +94,11 @@ export default function AppPage() {
         <form onSubmit={handleSubmit} className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Source URL</label>
-              <input
-                type="text"
-                name="sourceUrl"
-                required
-                className="w-full p-2 border rounded"
-                placeholder="/your-short-url"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium mb-2">Target URL</label>
               <input
                 type="url"
-                name="targetUrl"
+                value={newUrl}
+                onChange={(e) => setNewUrl(e.target.value)}
                 required
                 className="w-full p-2 border rounded"
                 placeholder="https://example.com"
@@ -118,9 +108,11 @@ export default function AppPage() {
           <button
             type="submit"
             className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            disabled={loading}
           >
-            Create Redirect
+            {loading ? 'Creating...' : 'Create Redirect'}
           </button>
+          {error && <p className="text-red-500 mt-2">{error}</p>}
         </form>
 
         {loading ? (
