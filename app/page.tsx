@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { signIn, signOut, useSession } from 'next-auth/react'
+import Image from 'next/image'
 
 interface ShortUrl {
   id: string
@@ -13,17 +14,13 @@ interface ShortUrl {
 }
 
 export default function Home() {
-  const { data: session, status } = useSession()
+  const { data: session } = useSession()
   const [urls, setUrls] = useState<ShortUrl[]>([])
   const [targetUrl, setTargetUrl] = useState('')
   const [shortUrl, setShortUrl] = useState('')
   const [copyMsg, setCopyMsg] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
   const [editTarget, setEditTarget] = useState('')
-
-  useEffect(() => {
-    fetchUrls()
-  }, [session])
 
   const fetchUrls = async () => {
     const res = await fetch('/api/shorturl')
@@ -35,6 +32,10 @@ export default function Home() {
       setUrls(data)
     }
   }
+
+  useEffect(() => {
+    fetchUrls()
+  }, [session?.user?.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,7 +97,13 @@ export default function Home() {
           {session?.user ? (
             <>
               {session.user.image && (
-                <img src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full border-2 border-white" />
+                <Image
+                  src={session.user.image}
+                  alt="avatar"
+                  width={32}
+                  height={32}
+                  className="rounded-full border-2 border-white"
+                />
               )}
               <span className="font-semibold">{session.user.name}</span>
               <button onClick={() => signOut()} className="bg-white/20 hover:bg-white/40 px-4 py-1 rounded transition">Logout</button>

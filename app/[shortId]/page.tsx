@@ -4,8 +4,13 @@ import { headers } from 'next/headers';
 
 const prisma = new PrismaClient();
 
-export default async function ShortRedirectPage(props: any) {
-  const params = await props.params;
+interface PageProps {
+  params: {
+    shortId: string;
+  };
+}
+
+export default async function ShortRedirectPage({ params }: PageProps) {
   const shortId = params.shortId;
   const url = await prisma.shortUrl.findUnique({ where: { shortId } });
   if (url) {
