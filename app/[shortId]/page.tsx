@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import { headers } from 'next/headers';
 
@@ -19,14 +19,14 @@ export default async function Page({ params }: PageProps) {
   const { shortId } = params;
 
   try {
-    const redirect = await prisma.redirect.findUnique({
+    const redirectData = await prisma.redirect.findUnique({
       where: {
         shortId
       }
     });
 
-    if (!redirect) {
-      return redirect('/');
+    if (!redirectData) {
+      notFound();
     }
 
     // IP निकालो
@@ -35,14 +35,9 @@ export default async function Page({ params }: PageProps) {
     // क्लिक रिकॉर्ड करो
     await prisma.click.create({ data: { shortId, ip } });
 
-    return redirect(redirect.targetUrl);
+    redirect(redirectData.targetUrl);
   } catch (error: unknown) {
-    const errorResponse = error as ErrorResponse;
-    return {
-      redirect: {
-        destination: errorResponse.message === 'URL not found' ? '/404' : '/500',
-        permanent: false,
-      },
-    };
+    // कोई भी error आए तो 500 पर redirect कर दो
+    redirect('/500');
   }
 } 
