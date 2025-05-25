@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { signIn, signOut, useSession } from 'next-auth/react'
+import Image from 'next/image'
 
 interface ShortUrl {
   id: string
@@ -20,21 +21,30 @@ export default function Home() {
   const [copyMsg, setCopyMsg] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
   const [editTarget, setEditTarget] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  const fetchUrls = async () => {
+    try {
+      const response = await fetch('/api/shorturl')
+      if (response.ok) {
+        const data = await response.json()
+        // अगर लॉगिन है तो सिर्फ अपने URLs दिखाओ, वरना सब
+        if (session?.user?.id) {
+          setUrls(data.filter((url: ShortUrl) => url.userId === session.user.id))
+        } else {
+          setUrls(data)
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching URLs:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     fetchUrls()
   }, [session])
-
-  const fetchUrls = async () => {
-    const res = await fetch('/api/shorturl')
-    const data = await res.json()
-    // अगर लॉगिन है तो सिर्फ अपने URLs दिखाओ, वरना सब
-    if (session?.user?.id) {
-      setUrls(data.filter((url: ShortUrl) => url.userId === session.user.id))
-    } else {
-      setUrls(data)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,7 +106,7 @@ export default function Home() {
           {session?.user ? (
             <>
               {session.user.image && (
-                <img src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full border-2 border-white" />
+                <Image src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full border-2 border-white" width={32} height={32} />
               )}
               <span className="font-semibold">{session.user.name}</span>
               <button onClick={() => signOut()} className="bg-white/20 hover:bg-white/40 px-4 py-1 rounded transition">Logout</button>
@@ -151,37 +161,42 @@ export default function Home() {
           )}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold mb-4 text-gray-700 dark:text-gray-200">All Short URLs</h2>
-            {urls.length === 0 && (
-              <p className="text-gray-500 text-center">No short URLs found.</p>
-            )}
-            {urls.map(url => (
-              <div key={url.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 shadow-sm gap-2">
-                <div className="flex-1 flex flex-col gap-1">
-                  <a href={`/${url.shortId}`} target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold underline break-all">{window.location.origin + '/' + url.shortId}</a>
-                  {editId === url.id ? (
-                    <div className="flex gap-2 mt-1">
-                      <input
-                        type="url"
-                        value={editTarget}
-                        onChange={e => setEditTarget(e.target.value)}
-                        className="w-full p-2 border rounded bg-gray-100 dark:bg-gray-800"
-                      />
-                      <button onClick={() => handleEditSave(url.id)} className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Save</button>
-                      <button onClick={() => setEditId(null)} className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500">Cancel</button>
+            {loading ? (
+              <div className="text-center">Loading...</div>
+            ) : (
+              urls.length === 0 ? (
+                <p className="text-gray-500 text-center">No short URLs found.</p>
+              ) : (
+                urls.map(url => (
+                  <div key={url.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 shadow-sm gap-2">
+                    <div className="flex-1 flex flex-col gap-1">
+                      <a href={`/${url.shortId}`} target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold underline break-all">{window.location.origin + '/' + url.shortId}</a>
+                      {editId === url.id ? (
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            type="url"
+                            value={editTarget}
+                            onChange={e => setEditTarget(e.target.value)}
+                            className="w-full p-2 border rounded bg-gray-100 dark:bg-gray-800"
+                          />
+                          <button onClick={() => handleEditSave(url.id)} className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Save</button>
+                          <button onClick={() => setEditId(null)} className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500">Cancel</button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-600 dark:text-gray-400 break-all">{url.targetUrl}</span>
+                      )}
                     </div>
-                  ) : (
-                    <span className="text-gray-600 dark:text-gray-400 break-all">{url.targetUrl}</span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2 items-end">
-                  <span className="text-xs text-gray-500">Clicks (unique IP): <b>{url.clickCount}</b></span>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleEdit(url.id, url.targetUrl)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Edit</button>
-                    <button onClick={() => handleDelete(url.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</button>
+                    <div className="flex flex-col gap-2 items-end">
+                      <span className="text-xs text-gray-500">Clicks (unique IP): <b>{url.clickCount}</b></span>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEdit(url.id, url.targetUrl)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Edit</button>
+                        <button onClick={() => handleDelete(url.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                ))
+              )
+            )}
           </div>
         </div>
       </main>
