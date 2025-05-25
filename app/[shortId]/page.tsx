@@ -19,7 +19,7 @@ export default async function Page({ params }: PageProps) {
   const { shortId } = await params;
 
   try {
-    const redirectData = await prisma.redirect.findUnique({
+    const redirectData = await prisma.shortUrl.findUnique({
       where: {
         shortId
       }
@@ -33,7 +33,9 @@ export default async function Page({ params }: PageProps) {
     const forwarded = (await headers()).get('x-forwarded-for');
     const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
     // क्लिक रिकॉर्ड करो
-    await prisma.click.create({ data: { shortId, ip } });
+    if (prisma.click) {
+      await prisma.click.create({ data: { shortId, ip } });
+    }
 
     redirect(redirectData.targetUrl);
   } catch (error: unknown) {
