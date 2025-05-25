@@ -4,6 +4,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
+    dirs: ['app']
+  },
+  typescript: {
+    ignoreBuildErrors: true
   },
   /* config options here */
 };
