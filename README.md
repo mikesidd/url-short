@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# URL Redirect Manager
 
-## Getting Started
+A dynamic URL redirection system built with Next.js, Prisma, and PostgreSQL.
 
-First, run the development server:
+## Features
 
+- Create unlimited URL redirects
+- Manage redirects through a simple web interface
+- Automatic redirection based on database rules
+- RESTful API for managing redirects
+
+## Setup
+
+1. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Set up your PostgreSQL database and add the connection URL to `.env`:
+```
+DATABASE_URL="postgresql://username:password@localhost:5432/your_database"
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Run database migrations:
+```bash
+npx prisma migrate dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Start the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+## Usage
 
-To learn more about Next.js, take a look at the following resources:
+1. Visit `http://localhost:3000` to access the web interface
+2. Add new redirects by entering the source URL and target URL
+3. Delete redirects using the delete button
+4. All redirects are automatically applied when someone visits the source URL
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Endpoints
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `GET /api/redirects` - Get all redirects
+- `POST /api/redirects` - Create a new redirect
+- `DELETE /api/redirects` - Delete a redirect
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Deploy to Vercel:
+```bash
+vercel
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. Set up your PostgreSQL database (e.g., using Vercel Postgres)
+3. Add the `DATABASE_URL` environment variable in your Vercel project settings
+4. Deploy your database migrations:
+```bash
+vercel env pull .env
+npx prisma migrate deploy
+```

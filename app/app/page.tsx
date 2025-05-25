@@ -1,6 +1,60 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Image from "next/image";
 
+interface Redirect {
+  id: string
+  sourceUrl: string
+  targetUrl: string
+}
+
 export default function Home() {
+  const [redirects, setRedirects] = useState<Redirect[]>([])
+  const [sourceUrl, setSourceUrl] = useState('')
+  const [targetUrl, setTargetUrl] = useState('')
+
+  useEffect(() => {
+    fetchRedirects()
+  }, [])
+
+  const fetchRedirects = async () => {
+    const response = await fetch('/api/redirects')
+    const data = await response.json()
+    setRedirects(data)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const response = await fetch('/api/redirects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceUrl, targetUrl }),
+      })
+      if (response.ok) {
+        setSourceUrl('')
+        setTargetUrl('')
+        fetchRedirects()
+      }
+    } catch (error) {
+      // error
+    }
+  }
+
+  const handleDelete = async (sourceUrl: string) => {
+    try {
+      const response = await fetch('/api/redirects', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceUrl }),
+      })
+      if (response.ok) fetchRedirects()
+    } catch (error) {
+      // error
+    }
+  }
+
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
