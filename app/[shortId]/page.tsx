@@ -10,6 +10,11 @@ interface PageProps {
   };
 }
 
+interface ErrorResponse {
+  message: string;
+  status?: number;
+}
+
 export default async function Page({ params }: PageProps) {
   const { shortId } = params;
 
@@ -31,8 +36,13 @@ export default async function Page({ params }: PageProps) {
     await prisma.click.create({ data: { shortId, ip } });
 
     return redirect(redirect.targetUrl);
-  } catch (error) {
-    console.error('Error fetching redirect:', error);
-    return redirect('/');
+  } catch (error: unknown) {
+    const errorResponse = error as ErrorResponse;
+    return {
+      redirect: {
+        destination: errorResponse.message === 'URL not found' ? '/404' : '/500',
+        permanent: false,
+      },
+    };
   }
 } 

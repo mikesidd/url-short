@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from "next/image";
@@ -17,49 +17,45 @@ export default function AppPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const [urls, setUrls] = useState<Redirect[]>([])
-  const [loading, setLoading] = useState(true)
+  const [newUrl, setNewUrl] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const fetchUrls = async () => {
+  const fetchUrls = useCallback(async () => {
     try {
       const response = await fetch('/api/redirects')
-      if (response.ok) {
-        const data = await response.json()
-        setUrls(data)
-      }
+      if (!response.ok) throw new Error('Failed to fetch URLs')
+      const data = await response.json()
+      setUrls(data)
     } catch (err) {
-      console.error('Error fetching URLs:', err)
-    } finally {
-      setLoading(false)
+      setError('Failed to load URLs')
     }
-  }
+  }, [])
 
   useEffect(() => {
     if (session) {
       fetchUrls()
     }
-  }, [session])
+  }, [session, fetchUrls])
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const sourceUrl = formData.get('sourceUrl') as string
-    const targetUrl = formData.get('targetUrl') as string
-
+    setLoading(true)
+    setError(null)
     try {
       const response = await fetch('/api/redirects', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sourceUrl, targetUrl }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUrl: newUrl }),
       })
-
-      if (response.ok) {
-        fetchUrls()
-        e.currentTarget.reset()
-      }
+      if (!response.ok) throw new Error('Failed to create URL')
+      const data = await response.json()
+      setUrls([...urls, data])
+      setNewUrl('')
     } catch (err) {
-      console.error('Error creating redirect:', err)
+      setError('Failed to create URL')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -68,12 +64,10 @@ export default function AppPage() {
       const response = await fetch(`/api/redirects/${id}`, {
         method: 'DELETE',
       })
-
-      if (response.ok) {
-        fetchUrls()
-      }
+      if (!response.ok) throw new Error('Failed to delete URL')
+      setUrls(urls.filter(url => url.id !== id))
     } catch (err) {
-      console.error('Error deleting redirect:', err)
+      setError('Failed to delete URL')
     }
   }
 

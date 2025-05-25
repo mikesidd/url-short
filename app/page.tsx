@@ -43,8 +43,10 @@ export default function Home() {
   }
 
   useEffect(() => {
-    fetchUrls()
-  }, [session])
+    if (session) {
+      fetchUrls()
+    }
+  }, [session, fetchUrls])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -105,8 +107,14 @@ export default function Home() {
         <div className="flex items-center gap-4">
           {session?.user ? (
             <>
-              {session.user.image && (
-                <Image src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full border-2 border-white" width={32} height={32} />
+              {session?.user?.image && (
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name || 'User'}
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
               )}
               <span className="font-semibold">{session.user.name}</span>
               <button onClick={() => signOut()} className="bg-white/20 hover:bg-white/40 px-4 py-1 rounded transition">Logout</button>
