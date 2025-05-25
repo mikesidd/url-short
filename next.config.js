@@ -6,6 +6,10 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  reactStrictMode: false,
+  experimental: {
+    suppressHydrationWarning: true,
+  }
 }
 
 module.exports = nextConfig; 
